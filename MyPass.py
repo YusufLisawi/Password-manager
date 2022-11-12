@@ -1,7 +1,6 @@
 from tkinter import *
 from tkinter import messagebox
 import pyperclip
-import json
 # ---------------------------- PASSWORD GENERATOR ------------------------------- #
 import string
 import random
@@ -33,55 +32,55 @@ def passgen(n_letters=6,n_symbols=1,n_numbers=3):
         generate_btn.config(text='Generate')
         password_entry.delete(0, 'end')
 
+# ---------------------------- CONNECT DATABASE PASSWORDS ------------------------------- #
+
+# install pymongo ~ pip install pymongo 
+# Impor ting pymongo so you can work with mongodb in python
+import pymongo 
+# Connection with mongodb
+db = pymongo.MongoClient("mongodb://localhost:27017/")
+# Creating the Database "passwords"
+# MongoDB will create the database if it does not exist.
+pwDB = db["passwords"]
+
 # ---------------------------- SAVE PASSWORD ------------------------------- #
 def savepass():
     password = password_entry.get()
     email = email_entry.get()
     website = website_entry.get().capitalize()
-    new_data = {
-        website: {
-        "email" : email,
-        "password" : password,
-        }
-    }
     if password == '' or email == '' or website == '':
         messagebox.showwarning(message="Please make sure to fill all the fields", title="MyPass")
     else:
-        try:
-            with open("/Users/yusufisawi/Documents/Passwords/data.json", "r") as file:
-                # reading old data
-                data = json.load(file)
-        except:
-             with open("/Users/yusufisawi/Documents/Passwords/data.json", "w") as file:
-                json.dump(new_data, file, indent=4)
+        # Mongodb Document 
+        new_data = {
+            "website": website,
+            "email" : email,
+            "password" : password,
+        }
+        if pwDB["passwords_col"].find_one({"website": website}) == None:
+            pwDB["passwords_col"].insert_one(new_data)
         else:
-            # updating old data with new data
-            data.update(new_data)
-            
-            with open("/Users/yusufisawi/Documents/Passwords/data.json", "w") as file:
-                # adding the data
-                json.dump(data, file, indent=4)
+            pwDB["passwords_col"].update_one({"website": website}, {"$set" : new_data})
 
-        finally:
-            messagebox.showinfo(message="Saved Successfully!", title="MyPass")
+        messagebox.showinfo(message="Saved Successfully!", title="MyPass")
 
-            password_entry.delete(0, 'end')
-            website_entry.delete(0, 'end')
-            generate_btn.config(text='Generate')
+        password_entry.delete(0, 'end')
+        website_entry.delete(0, 'end')
+        generate_btn.config(text='Generate')
 # ---------------------------- SEARCH PASSWORD ------------------------------- #
 def searchpass():
+    website = website_entry.get().capitalize()
     try:
-        with open("/Users/yusufisawi/Documents/Passwords/data.json", "r") as file:
-            data = json.load(file)
+        account = pwDB["passwords_col"].find_one({"website" : website})
 
-            website = website_entry.get().capitalize()
-            if website not in data:
-                messagebox.showwarning(message="No details found", title="MyPass")
-            elif website in data:
-                email = data[website]["email"]
-                password = data[website]["password"]
-                pyperclip.copy(password)
-                messagebox.showinfo(title=website, message=f"Email: {email}\nPassword: {password}\n\nPassword copied!")
+        if account != None:
+            email = account["email"]
+            password = account["password"]
+            pyperclip.copy(password)
+            messagebox.showinfo(title=website, message=f"Email: {email}\nPassword: {password}\n\nPassword copied!")
+            
+        else:
+            messagebox.showwarning(message="No details found", title="MyPass")
 
     except:
         messagebox.showerror(message="No data file found", title="MyPass")
@@ -95,7 +94,7 @@ win.maxsize(width=600, height=420)
 
 # logo
 logo = Canvas(width=200, height=200, highlightthickness=0)
-logo_image = PhotoImage(file="/Users/yusufisawi/Library/Mobile Documents/com~apple~CloudDocs/Desktop/__Self__/pythonAdvanced/password-manager-start/logo.png")
+logo_image = PhotoImage(file="/Users/yusufisawi/Documents/Self/Python/pythonAdvanced/password-manager/logo.png")
 logo.create_image(101, 101 , image=logo_image)
 logo.grid(column=1, row=0)
 # logo------
