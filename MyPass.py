@@ -37,7 +37,10 @@ def passgen(n_letters=6,n_symbols=1,n_numbers=3):
 # install pymongo ~ pip install pymongo 
 # Impor ting pymongo so you can work with mongodb in python
 import pymongo 
-# Connection with mongodb
+# To create a database in MongoDB, 
+# start by creating a MongoClient object, 
+# then specify a connection URL with the correct ip address 
+# and the name of the database you want to create.
 db = pymongo.MongoClient("mongodb://localhost:27017/")
 # Creating the Database "passwords"
 # MongoDB will create the database if it does not exist.
